@@ -1,2 +1,11 @@
 # original dataset
 *.txt
+*.adicht
+
+# autodesk stuff
+*.bak
+
+# 3d print
+*.stl
+*.pwma
+*.pwmb
