@@ -6,6 +6,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Convert txt file to gz file.')
     parser.add_argument('-c', '--category',
                         help='The category of the file.')
+    parser.add_argument('-d', '--date',
+                        help='Date of the test')
     parser.add_argument('-l', '--label',
                         help='The label of the file to convert.')
     parser.add_argument('-ds', '--downsamp',
@@ -18,8 +20,8 @@ def parse_args():
                         type=int)
     return parser.parse_args()
 
-def compress_gz(category, filename, downsamp, skiprows):
-    path = os.path.join('dataset', category, filename)
+def compress_gz(category, date, filename, downsamp, skiprows):
+    path = os.path.join('dataset', category, date, filename)
 
     # sample one data point in *downsamp* consecutive data points to control gzip file size
     with open(path+'.txt', 'rb') as f_in, gzip.open(path+'.gz', 'wb') as f_out:
@@ -39,10 +41,11 @@ def compress_gz(category, filename, downsamp, skiprows):
 def main():
     args = parse_args()
     category = args.category
+    date = args.date
     label = args.label
     downsamp = args.downsamp
     skiprows = args.skiprows
-    compress_gz(category, label, downsamp, skiprows)
+    compress_gz(category, date, label, downsamp, skiprows)
     
 if __name__ == '__main__':
     main()
