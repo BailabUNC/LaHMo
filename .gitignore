@@ -9,3 +9,6 @@
 *.stl
 *.pwma
 *.pwmb
+
+# store
+**/.DS_Store
