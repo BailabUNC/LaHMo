@@ -51,13 +51,13 @@ def draw_vector_from_origin(ax, coords, color):
 
 def orientation_update(frame):
     try:
-        with serial.Serial('COM30', 9600) as ser:
+        with serial.Serial('COM17', 9600) as ser:
             ser_byte = ser.readline()
             decoded_byte = ser_byte.decode('utf-8')
             print(decoded_byte)
-            yaw = float(decoded_byte.split('\t')[0])
-            pitch = float(decoded_byte.split('\t')[1])
-            roll = float(decoded_byte.split('\t')[2])
+            yaw = float(decoded_byte.split('\t')[1])
+            pitch = float(decoded_byte.split('\t')[2])
+            roll = float(decoded_byte.split('\t')[3])
             coordsl, coordss, coordsn = angles_to_coords(rho, yaw, pitch, roll)
     except:
         return vecl, vecs, vecn
@@ -97,9 +97,12 @@ vecn = draw_vector_from_origin(ax, coordsn_init, 'midnightblue') # normal axis i
 
 # Path to file specification
 current_time = datetime.datetime.now()
-filename = str(current_time.month)+str(current_time.day)+str(current_time.hour)+str(current_time.minute)+str(current_time.second)
-path = 'dataset/orientation/0309/'+filename+'.txt'
-
+filename = '-'.join([str(current_time.month),
+                     str(current_time.day),
+                     str(current_time.hour),
+                     str(current_time.minute),
+                     str(current_time.second)])
+path = 'dataset/orientation/test/'+filename+'.txt'
 
 # write to file
 with open(path, 'a+') as f:
@@ -107,24 +110,24 @@ with open(path, 'a+') as f:
     write_line(f, '\t'.join(('Timestamp (ms)', 'Yaw (degree)', 'Pitch (degree)', 'Roll (degree)')))
     while True:
         try:
-            with serial.Serial('COM30', 9600) as ser:
+            with serial.Serial('COM17', 9600) as ser:
                 ser_byte = ser.readline()
                 decoded_byte = ser_byte.decode('utf-8')
                 print(decoded_byte)
                 
                 now_s = time.time()
                 timestamp = now_s - start_s
-                yaw = float(decoded_byte.split('\t')[0])
-                pitch = float(decoded_byte.split('\t')[1])
-                roll = float(decoded_byte.split('\t')[2])
+                yaw = float(decoded_byte.split('\t')[1])
+                pitch = float(decoded_byte.split('\t')[2])
+                roll = float(decoded_byte.split('\t')[3])
                 write_line(f, '\t'.join((str(1000*timestamp), str(yaw), str(pitch), str(roll))))
         except IndexError:
             continue
-        except ValueError:
+        except ValueError: 
             continue
         except KeyboardInterrupt:
             break
 
 # Start animation
-# anim = FuncAnimation(fig, orientation_update, interval=1)
+# anim = FuncAnimation(fig, orientation_update, interval=0.1)
 # plt.show()
