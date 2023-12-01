@@ -115,11 +115,11 @@ def window_stack(data, window_size):
 
 def section_average(all_windows):
     '''shape: [n_window, peak_window]'''
-    window_to_delete = np.zeros(all_windows.shape[0])
+    window_to_keep = np.ones(all_windows.shape[0])
     avg = np.mean(all_windows, axis=0)
     std = np.std(all_windows, axis=0)
     for window_idx, window in enumerate(all_windows):
         for idx, val in enumerate(window):
             if np.abs(val-avg[idx]) > 3*std[idx]:
-                window_to_delete[window_idx] = 1
-    return window_to_delete
+                window_to_keep[window_idx] = 0
+    return window_to_keep
