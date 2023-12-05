@@ -4,7 +4,8 @@ import time
 from datetime import datetime
 import csv
 from collections import deque
-import itertools
+import argparse
+import sys
 
 import numpy as np
 import matplotlib as mpl
@@ -191,6 +192,16 @@ class SerialPlotter:
         plt.close(self._fig)
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Read serial data from specific serial port.')
+    parser.add_argument('--port', metavar='P', type=str, help='The serial port to read from.')
+
+    args = parser.parse_args()
+    if not args.port:
+        print("No port specified.")
+        sys.exit(-1)
+    else:
+        port = args.port
+
     mpl.rcParams['font.family'] = 'arial'
     mpl.rcParams['font.size'] = 14
 
@@ -203,7 +214,7 @@ if __name__ == '__main__':
     second = now.strftime('%S')
     time_str = '-'.join((year, month, day, hour, minute, second))
     
-    serial_plotter = SerialPlotter('COM8', max_len=100, csv_filename='../dataset/ble_test/test-'+time_str+'.csv')
+    serial_plotter = SerialPlotter(port, max_len=100, csv_filename=f'../dataset/ble_test/test-{time_str}.csv')
     
     serial_plotter.start()
     plt.show(block=True)
