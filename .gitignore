@@ -13,3 +13,6 @@
 
 # store
 **/.DS_Store
+
+# python compiles
+__pycache__/
