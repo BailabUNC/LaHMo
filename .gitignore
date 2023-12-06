@@ -1,6 +1,7 @@
 # original dataset
 *.txt
 
+# powerlab project files
 *.adicht
 
 # autodesk stuff
@@ -27,3 +28,10 @@ __pycache__/
 *.ogg
 *.ogv
 *.ts
+
+# Adobe premiere
+*.prproj
+*.pproj
+
+# large pictures
+*.tif
