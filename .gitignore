@@ -16,3 +16,14 @@
 
 # python compiles
 __pycache__/
+
+# videos
+*.mp4
+*.mov
+*.avi
+*.flv
+*.webm
+*.mkv
+*.ogg
+*.ogv
+*.ts
