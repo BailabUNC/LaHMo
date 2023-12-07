@@ -15,11 +15,16 @@ from matplotlib.animation import FuncAnimation
 import matplotlib.widgets as widgets
 
 class SerialPlotter:
-    def __init__(self, port, baudrate=115200, max_len=500, plot_interval=0.001, csv_filename=None):
+    def __init__(self, port, baudrate=115200, max_len=500, plot_interval=0.001, csv_filename=None, conn_timeout=5):
         self.ser = serial.Serial(port=port, baudrate=baudrate)
         self.max_len = max_len
         self.plot_interval = plot_interval
+        self.conn_timeout = conn_timeout
+
+        # Data export
         self.csv_filename = csv_filename
+        self.csvfile = None
+        self.csv_writer = None
 
         # Initialize containers
         self.timestamps = deque([], maxlen=self.max_len)
@@ -73,13 +78,10 @@ class SerialPlotter:
         self._stop_button_ax = self._fig.add_axes([0.85, 0.025, 0.1, 0.04])
         self._stop_button = widgets.Button(self._stop_button_ax, 'Stop')
         self._stop_button.on_clicked(self._on_stop_button_clicked)
+        
+    def _on_stop_button_clicked(self, event):
+        self.stop()
 
-        # Data writing 
-        if self.csv_filename:
-            self.csvfile = open(self.csv_filename, 'a+', newline='')
-            self.csv_writer = csv.writer(self.csvfile)
-        
-        
     def start(self):
         # background thread
         self._serial_thread.start()
@@ -89,11 +91,18 @@ class SerialPlotter:
         
     def stop(self):
         self._stop_event.set()
-        self._serial_thread.join()
+        plt.close(self._fig)
+
+        if threading.current_thread() != self._serial_thread:
+            self._serial_thread.join()
         if self.csvfile:
             self.csvfile.close()
+            self.csvfile = None
     
     def _read_serial(self):
+        # timestamp to record the first disconnect (first occurrance of UnicodeDecodeError)
+        disconn_start_time = None
+        
         while not self._stop_event.is_set():
         # Read data from serial port
             try:
@@ -111,8 +120,17 @@ class SerialPlotter:
                 pitch_string = split_strings[6]
                 yaw_string = split_strings[7]
 
+                disconn_start_time = None # reset the disconnect counter
+
             except UnicodeDecodeError:
+                if not disconn_start_time:
+                    disconn_start_time = time.perf_counter()
+                elif time.perf_counter() - disconn_start_time > self.conn_timeout:
+                    print('Timeout connecting to the given LaHMo.')
+                    self.stop()
+                    break
                 continue
+
             except IndexError:
                 continue
         
@@ -140,7 +158,11 @@ class SerialPlotter:
             self.roll.append(self._last_roll)
             self.pitch.append(self._last_pitch)
             self.yaw.append(self._last_yaw)
-                    
+            
+            if not self.csvfile and self.csv_filename:
+                self.csvfile = open(self.csv_filename, 'a+', newline='')
+                self.csv_writer = csv.writer(self.csvfile)
+
             # Write to csv
             if self.csv_filename:
                 self.csv_writer.writerow([np.around(self._last_timestamp, 3),
@@ -187,9 +209,7 @@ class SerialPlotter:
         
         return self._line0, self._line1, self._line2, self._line3, self._liner, self._linep, self._liney
         
-    def _on_stop_button_clicked(self, event):
-        self.stop()
-        plt.close(self._fig)
+    
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Read serial data from specific serial port.')
@@ -219,5 +239,4 @@ if __name__ == '__main__':
     serial_plotter.start()
     plt.show(block=True)
 
-    # input('Press Enter to stop...\n')
     serial_plotter.stop()
