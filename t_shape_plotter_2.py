@@ -8,16 +8,51 @@ from scipy.spatial.transform import Rotation as R
 from scipy.interpolate import griddata
 from cmap import Colormap
 
-mpl.rcParams['animation.ffmpeg_path'] ='C:\\installers\\tools\\ffmpeg-6.0-essentials_build\\bin\\ffmpeg.exe'
+import time
+
+mpl.rcParams['animation.ffmpeg_path'] = 'C:\\installers\\tools\\ffmpeg-6.0-essentials_build\\bin\\ffmpeg.exe'
+# mpl.rcParams['animation.ffmpeg_path'] = r'C:\ffmpeg-2023-12-04-git-8c117b75af-full_build\bin\ffmpeg.exe'
+
+def benchmark(func):
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        print(f"{func.__name__} took {end-start:0.4f} seconds to complete")
+        return result
+    return wrapper
+
 
 class TShapePlotter:
+    '''
+    A class for creating 3D animated visualizations of a T-shaped object.
+
+    Attributes:
+        fig (Figure): The matplotlib figure object for the plot.
+        ax (Axes3D): The 3D axes object for the plot.
+        azim (int): Azimuthal angle for the 3D plot.
+        elev (int): Elevation angle for the 3D plot.
+    '''
     
-    fig = plt.figure(figsize=(8, 8))
+    fig = plt.figure(figsize=(6, 6))
     ax = fig.add_subplot(projection='3d')
     azim = 30
     elev = 20
 
     def __init__(self, top_len, stem_len, w, pd_dia=5, centers=None, rc=0, isShowStep=False):
+        '''
+        Initialize the TShapePlotter with dimensions and properties for the T-shape.
+
+        Input:
+            top_len [int]: The length of the top part of the T-shape.
+            stem_len [int]: The length of the stem part of the T-shape.
+            w [int]: The width of the T-shape.
+            pd_dia [int]: Diameter of the pressure distribution area. Default is 5.
+            centers [list of lists]: Center points for pressure values. Default is None.
+            rc [int]: Radius for round corners. Default is 0.
+            isShowStep [bool]: Flag to show steps during animation. Default is False.
+        """
+        '''
         self.top_len = top_len
         self.stem_len = stem_len
         self.w = w
@@ -32,6 +67,11 @@ class TShapePlotter:
         self.isShowStep = isShowStep
 
     def _generate_t(self):
+        '''
+        Generates a grid for the T-shape and applies masks to shape it.
+        Internal use only.
+        '''
+
         # Calculate square and corner sizes
         self.frame_w = self.stem_len
         self.frame_h = self.top_len + self.w
@@ -72,10 +112,17 @@ class TShapePlotter:
             include_combined_mask = np.any(include_masks, axis=0)
             mask = np.logical_or(mask, include_combined_mask)
 
-        # self.t_shape = np.column_stack([x[mask], y[mask], np.zeros_like(x[mask])])
         self._t_mask = mask
 
     def _generate_ref_circ(self, diameter, n_ref_points):
+        '''
+        Generates reference circles in different planes for the 3D visualization.
+
+        Input:
+            diameter [int]: Diameter of the reference circles.
+            n_ref_points [int]: Number of points to generate for the circles.
+        '''
+
         theta = np.linspace(0, 2*np.pi, n_ref_points)
 
         # Circle parallel to XY plane
@@ -98,23 +145,50 @@ class TShapePlotter:
         self.zx_circle = np.column_stack([x_zx, y_zx, z_zx])
 
     def _generate_axes(self, diameter):
+        '''
+        Creates axis lines for the 3D plot.
+
+        Input:
+            diameter [int]: Diameter of the axes.
+        '''
         self.x_axes = np.array([[diameter / 2, 0, 0], [-diameter / 2, 0, 0]])
         self.y_axes = np.array([[0, diameter / 2, 0], [0, -diameter / 2, 0]])
         self.z_axes = np.array([[0, 0, diameter / 2], [0, 0, -diameter / 2]])
 
     def _generate_vals(self):
+        '''
+        Initializes an array to hold values for displacing the T-shape's surface.
+        Internal use only.
+        '''
         self.vals = np.zeros([100, 100])
 
     def _rotate(self, coords):
-        rotation = R.from_euler('ZYX', self.euler_angles, degrees=True)
+        '''
+        Applies a rotation to the T-shape based on Euler angles.
+
+        Input:
+            coords [array-like]: Coordinates to rotate.
+
+        Return:
+            [array-like]: Rotated coordinates.
+        '''
+        rotation = R.from_euler('XYZ', self.euler_angles, degrees=True)
         return rotation.apply(coords)
     
     def _displacement(self):
+        '''
+        Adjusts the T-shape's Z-coordinates based on the values array.
+        Internal use only.
+        '''
         displacement = np.zeros_like(self.vals)
         displacement[self._t_mask] = self.vals[self._t_mask]
         self.t_full[:, 2] = displacement.ravel()
 
     def _interpolate(self):
+        '''
+        Performs interpolation for the T-shape's displacement values.
+        Internal use only.
+        '''
         known_points = np.column_stack(np.where(np.logical_or(self._known_mask,
                                                               np.isin(np.arange(100), [0, 99])[:, None] |
                                                               np.isin(np.arange(100), [0, 99])[None, :])))
@@ -164,15 +238,15 @@ class TShapePlotter:
                                             self.t_full[self._t_mask.ravel()][:, 1],
                                             self.t_full[self._t_mask.ravel()][:, 2],
                                             c=self.vals[self._t_mask], s=1,
-                                            cmap=Colormap('crameri:roma').to_matplotlib(),
-                                            vmax=1, vmin=-1,
+                                            cmap=Colormap('cmocean:balance').to_matplotlib(),
+                                            vmax=1, vmin=0,
                                             alpha=1)
             self.xy_line,  = self.ax.plot(self.xy_circle[:, 0], self.xy_circle[:, 1], self.xy_circle[:, 2],
-                                        c='#31DBF5', label='XY Circle', alpha=1)
+                                        c='#FF66D0', label='XY Circle', alpha=1)
             self.yz_line,  = self.ax.plot(self.yz_circle[:, 0], self.yz_circle[:, 1], self.yz_circle[:, 2],
-                                        c='#F56AAD', label='YZ Circle', alpha=1)
+                                        c='#CA82B0', label='YZ Circle', alpha=1)
             self.zx_line,  = self.ax.plot(self.zx_circle[:, 0], self.zx_circle[:, 1], self.zx_circle[:, 2],
-                                        c='#ADA666', label='ZX Circle', alpha=1)
+                                        c='#909090', label='ZX Circle', alpha=1)
             self.x_line,   = self.ax.plot(self.x_axes[:, 0], self.x_axes[:, 1], self.x_axes[:, 2],
                                         c='silver', ls='--')
             self.y_line,   = self.ax.plot(self.y_axes[:, 0], self.y_axes[:, 1], self.y_axes[:, 2],
@@ -219,14 +293,18 @@ class TShapePlotter:
         self.pvs_data = pvs
         self.angles_data = angles
     
+    @benchmark
     def update_ani(self, frame):
         self.set_pv(self.pvs_data[frame])
         self.set_angles(self.angles_data[frame])
-        if self.isShowStep:
-            print(frame)
+        if self.isShowStep and frame % 100 == 0:
+            print(f'Generating frame {frame}, overall {len(self.pvs_data)} frames.')
         self.draw()
 
     def animate(self):
+        '''
+        Creates and displays the animation.
+        '''
         self.init_canvas()
         self.anim = animation.FuncAnimation(self.fig, self.update_ani, interval=1,
                                             frames=len(self.pvs_data), repeat=False)
@@ -234,24 +312,26 @@ class TShapePlotter:
 
 # Read data
 def main():
-    
-    data = np.loadtxt('interp_data.csv', delimiter=',')
+    '''
+    Main function to read data, initialize TShapePlotter, set data, and generate animation.
+    '''
+    data = np.loadtxt('interp_data.csv', delimiter=',') # the angle data uses the sequence "roll, pitch, yaw"
     pvs_array = data[:, 2:6]
     angles_array = data[:, 6:9]
-    print(pvs_array.shape)
-    print(angles_array.shape)
+    # print(pvs_array.shape)
+    # print(angles_array.shape)
 
-    plotter = TShapePlotter(4, 6, 2, pd_dia=10, rc=1)
+    plotter = TShapePlotter(4, 6, 2, pd_dia=10, rc=1, isShowStep=True)
     plotter.azim = 40
     plotter.elev = 30
 
     # Generate animation
     plotter.set_data(pvs_array, angles_array)
-    plotter.init_canvas()
+    # plotter.init_canvas()
     plotter.animate()
 
-    ffwriter = animation.FFMpegWriter(fps=1000)
-    plotter.anim.save('dry_cough.mp4', writer=ffwriter)
-
+    ffwriter = animation.FFMpegWriter(fps=60)
+    plotter.anim.save('interp_data.mp4', writer=ffwriter)
+    
 if __name__ == '__main__':
     main()
