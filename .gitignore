@@ -1,3 +1,6 @@
+# archives
+*(archived)*
+
 # original dataset
 *.txt
 
@@ -16,7 +19,7 @@
 **/.DS_Store
 
 # python compiles
-__pycache__/
+__pycache__/*
 
 # videos
 *.mp4
@@ -35,3 +38,6 @@ __pycache__/
 
 # large pictures
 *.tif
+
+# pio files
+*/platformio.ini
