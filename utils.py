@@ -113,7 +113,7 @@ def window_stack(data, window_size):
     windowed_data = torch.stack([data[i: i+window_size] for i in range(0, n_windows*window_size, window_size)])
     return windowed_data.transpose(1, 2)
 
-def section_average(all_windows):
+def filter_windows(all_windows):
     '''shape: [n_window, peak_window]'''
     window_to_keep = np.ones(all_windows.shape[0])
     avg = np.mean(all_windows, axis=0)
