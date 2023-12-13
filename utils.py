@@ -114,7 +114,7 @@ def window_stack(data, window_size):
     return windowed_data.transpose(1, 2)
 
 def filter_windows(all_windows):
-    '''shape: [n_window, peak_window]'''
+    '''shape: [n_window, window_width]'''
     window_to_keep = np.ones(all_windows.shape[0])
     avg = np.mean(all_windows, axis=0)
     std = np.std(all_windows, axis=0)
