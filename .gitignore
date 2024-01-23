@@ -38,6 +38,9 @@ __pycache__/*
 
 # large pictures
 *.tif
+*.raf
+*.psd
+*.ai
 
 # pio files
 */platformio.ini
