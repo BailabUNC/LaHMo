@@ -45,3 +45,6 @@ __pycache__/*
 
 # pio files
 */platformio.ini
+
+# environment
+pyqt-env/*
