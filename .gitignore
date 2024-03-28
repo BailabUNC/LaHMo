@@ -16,6 +16,7 @@
 *.pwmb
 
 # store
+.DS_Store
 **/.DS_Store
 
 # python compiles
@@ -44,3 +45,6 @@ __pycache__/*
 
 # pio files
 */platformio.ini
+
+# environment
+pyqt-env/*
