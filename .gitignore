@@ -41,7 +41,6 @@ __pycache__/*
 *.tif
 *.raf
 *.psd
-# *.ai
 
 # pio files
 */platformio.ini
