@@ -29,39 +29,39 @@ class MyClientCallback: public BLEClientCallbacks
 		esp_err_t err;
 		isConnected = true;
 		
-		// Prepare the connection paramters update request
-		conn_params.latency = 0;
-		conn_params.max_int = 0x20; // max_int = 0x20*1.25ms = 40ms
-		conn_params.min_int = 0x10; // min_int = 0x10*1.25ms = 20ms
-		conn_params.timeout = 400;  // timeout = 400*10ms = 4000ms
-		err = ::esp_ble_gap_update_conn_params(&conn_params);
+		// // Prepare the connection paramters update request
+		// conn_params.latency = 0;
+		// conn_params.max_int = 0x20; // max_int = 0x20*1.25ms = 40ms
+		// conn_params.min_int = 0x10; // min_int = 0x10*1.25ms = 20ms
+		// conn_params.timeout = 400;  // timeout = 400*10ms = 4000ms
+		// err = ::esp_ble_gap_update_conn_params(&conn_params);
 
-		if (err != ESP_OK)
-		{
-			Serial.printf("esp_ble_gap_update_conn_params: rc=%d %s\n", err, esp_err_to_name(err));
-		}
-		else
-		{
-			Serial.println("Connection params updated.");
-		}
+		// if (err != ESP_OK)
+		// {
+		// 	Serial.printf("esp_ble_gap_update_conn_params: rc=%d %s\n", err, esp_err_to_name(err));
+		// }
+		// else
+		// {
+		// 	Serial.println("Connection params updated.");
+		// }
 
-		BLEAddress peerAddress = myDevice->getAddress();
-		esp_bd_addr_t *remote_bd_addr = peerAddress.getNative();
+		// BLEAddress peerAddress = myDevice->getAddress();
+		// esp_bd_addr_t *remote_bd_addr = peerAddress.getNative();
 
-		err = esp_ble_gap_set_prefered_phy(*remote_bd_addr,
-								     	   ESP_BLE_GAP_NO_PREFER_RECEIVE_PHY | ESP_BLE_GAP_NO_PREFER_TRANSMIT_PHY, // Set 'no preference' for certain PHYs
-								     	   ESP_BLE_GAP_PHY_2M_PREF_MASK, // Prefer 2M PHY for TX
-								     	   ESP_BLE_GAP_PHY_2M_PREF_MASK, // Prefer 2M PHY for RX
-								     	   ESP_BLE_GAP_PHY_OPTIONS_NO_PREF  // No specific PHY options
-    							     	  );
-		if (err != ESP_OK)
-		{
-			Serial.println("Error setting preferred PHY");
-		}
-		else
-		{
-			Serial.println("Set to 2M PHY");
-		}
+		// err = esp_ble_gap_set_prefered_phy(*remote_bd_addr,
+		// 						     	   ESP_BLE_GAP_NO_PREFER_RECEIVE_PHY | ESP_BLE_GAP_NO_PREFER_TRANSMIT_PHY, // Set 'no preference' for certain PHYs
+		// 						     	   ESP_BLE_GAP_PHY_2M_PREF_MASK, // Prefer 2M PHY for TX
+		// 						     	   ESP_BLE_GAP_PHY_2M_PREF_MASK, // Prefer 2M PHY for RX
+		// 						     	   ESP_BLE_GAP_PHY_OPTIONS_NO_PREF  // No specific PHY options
+    	// 						     	  );
+		// if (err != ESP_OK)
+		// {
+		// 	Serial.println("Error setting preferred PHY");
+		// }
+		// else
+		// {
+		// 	Serial.println("Set to 2M PHY");
+		// }
 	}
 	void onDisconnect(BLEClient *pClient)
 	{
@@ -193,8 +193,8 @@ void loop()
 				values.push_back(value);
 			}
 			uint32_t timestamp = std::stoul(values[0]);
-			float photovoltage0 = std::stof(values[1]);
-			float photovoltage1 = std::stof(values[2]);
+			float photovoltage0 = std::stof(values[2]);
+			float photovoltage1 = std::stof(values[1]);
 			float photovoltage2 = std::stof(values[3]);
 			float photovoltage3 = std::stof(values[4]);
 			float roll = std::stof(values[5]);

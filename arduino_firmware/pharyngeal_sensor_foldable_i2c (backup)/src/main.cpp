@@ -67,7 +67,14 @@ class MyServerCallbacks: public BLEServerCallbacks
 
 void IRAM_ATTR onTimer()
 {
-    canOutput = true;
+    static uint32_t previous_micros = micros();
+    uint32_t current_micros = micros();
+
+    if (ELAPSED_MICROS >= INTERVAL_US)
+    {
+        previous_micros = current_micros;
+        canOutput = true;
+    }
 }
 
 void ioInit()
@@ -92,14 +99,14 @@ void sensorInit()
 {
     delay(1000);
     Wire.begin(SDA, SCL);
-    Wire.setClock(100000);
+    Wire.setClock(400000);
 
 	if (!ads.isConnected())
 	{
 		ESP_LOGE(TAG, "Failed to initialize ADS1115.");
 		while (1);
 	}
-	ESP_LOGI(TAG, "ADS1115 initialized.");
+	ESP_LOGV(TAG, "ADS1115 initialized.");
     ads.setMode(0);
 	ads.setGain(1);
 	ads.setDataRate(7);
@@ -115,7 +122,7 @@ void sensorInit()
 	if (lsm6dsox.Enable_G() == LSM6DSOX_OK &&
 		lsm6dsox.Enable_X() == LSM6DSOX_OK)
 	{
-		ESP_LOGI(TAG, "Success enabling accelero and gyro");
+		ESP_LOGV(TAG, "Success enabling accelero and gyro");
 	}
 	else
 	{
@@ -135,7 +142,7 @@ void sensorInit()
 	}
 	else
 	{
-		ESP_LOGI(TAG, "Success checking id for LSM6DSOX sensor.");
+		ESP_LOGV(TAG, "Success checking id for LSM6DSOX sensor.");
 	}
 
 	// IMU setup
@@ -143,13 +150,11 @@ void sensorInit()
 	lsm6dsox.Set_G_FS(250);
 	lsm6dsox.Set_X_ODR(SR);
 	lsm6dsox.Set_G_ODR(SR);
-    lsm6dsox.Set_FIFO_Mode(LSM6DSOX_BYPASS_MODE); // flush any previous value in FIFO before start
-    lsm6dsox.Set_FIFO_Mode(LSM6DSOX_STREAM_MODE); // start batching in continous mode
 
     // filter init
-    filter.begin(1000000.0f / ALARM_US);
+    filter.begin(1000000.0f/INTERVAL_US);
 
-    ESP_LOGI(TAG, "Sensor initialized.");
+    ESP_LOGV(TAG, "Sensor initialized.");
 }
 
 void serviceInit()
@@ -187,7 +192,10 @@ void setup()
     serviceInit();
     advertisingInit();
 
-    ESP_LOGI(TAG, "Device started.");
+    // Serial.begin(115200);
+    ESP_LOGV(TAG, "Device started.");
+
+    // led_on();
 }
 
 void loop()
