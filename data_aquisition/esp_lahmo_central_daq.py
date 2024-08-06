@@ -66,7 +66,6 @@ class SerialPlotter:
             elif ii == 6:
                 ax.set_ylabel('Yaw ($\circ$)')
                 ax.set_xlabel('Time (ms)')
-            
         
         self._colors = pl.cm.tab10(np.linspace(0, 1, 7))
         
@@ -99,6 +98,30 @@ class SerialPlotter:
             self.csvfile.close()
             self.csvfile = None
     
+    def _parse_serial_line(self, serial_line):
+        try:
+            split_strings = serial_line.split('\t')
+            if len(split_strings) != 8:
+                return False  # Incomplete line
+            
+            data_keys = [
+                '_last_timestamp',
+                '_last_pv0',
+                '_last_pv1',
+                '_last_pv2',
+                '_last_pv3',
+                '_last_roll',
+                '_last_pitch',
+                '_last_yaw'
+                ]
+            for i, key in enumerate(data_keys):
+                setattr(self, key, float(split_strings[i]))
+
+            return True
+        
+        except ValueError:
+            return False
+
     def _read_serial(self):
         # timestamp to record the first disconnect (first occurrance of UnicodeDecodeError)
         disconn_start_time = None
@@ -109,16 +132,8 @@ class SerialPlotter:
                 serial_byte = self.ser.readline()
                 serial_line = serial_byte.decode('utf-8').strip()
 
-                split_strings = serial_line.split('\t')
-
-                timestamp_string = split_strings[0]
-                photovoltage0_string = split_strings[1]
-                photovoltage1_string = split_strings[2]
-                photovoltage2_string = split_strings[3]
-                photovoltage3_string = split_strings[4]
-                roll_string = split_strings[5]
-                pitch_string = split_strings[6]
-                yaw_string = split_strings[7]
+                if not self._parse_serial_line(serial_line):
+                    continue
 
                 disconn_start_time = None # reset the disconnect counter
 
@@ -133,22 +148,6 @@ class SerialPlotter:
 
             except IndexError:
                 continue
-        
-            if len(split_strings) != 8: # incomplete line
-                print(len(split_strings))
-                continue
-
-            if self._last_timestamp == int(timestamp_string):
-                continue
-        
-            self._last_timestamp = int(timestamp_string)
-            self._last_pv0 = float(photovoltage0_string)
-            self._last_pv1 = float(photovoltage1_string)
-            self._last_pv2 = float(photovoltage2_string)
-            self._last_pv3 = float(photovoltage3_string)
-            self._last_roll = float(roll_string)
-            self._last_pitch = float(pitch_string)
-            self._last_yaw = float(yaw_string)
             
             self.timestamps.append(self._last_timestamp)
             self.pv0.append(self._last_pv0)
@@ -234,7 +233,7 @@ if __name__ == '__main__':
     second = now.strftime('%S')
     time_str = '-'.join((year, month, day, hour, minute, second))
     
-    serial_plotter = SerialPlotter(port, max_len=100, csv_filename=f'../dataset/ble_test/test-{time_str}.csv')
+    serial_plotter = SerialPlotter(port, max_len=100, csv_filename=f'dataset/ble_test/test-{time_str}.csv')
     
     serial_plotter.start()
     plt.show(block=True)
