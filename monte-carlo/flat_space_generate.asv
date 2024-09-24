@@ -1,0 +1,33 @@
+function voxel_space = flat_space_generate(l1, l2, l3, l4, offset, size)
+%FLAT_SPACE_GENERATE Generate a 3D array that represents the geometry of 
+% the tissue
+%   Input: epidermis_thickness, dermis_thickness, fat_thickness,
+%   muscle_thickness, offset, size
+%   Output: voxel_space
+
+voxel_space = [size, size, size];
+
+tissue_size = l1 + l2 + l3 + l4;
+if tissue_size + offset * 2 > size
+    error('Total thickness is too large.');
+end
+
+% Set tissue layers with different thickness
+voxel_space(:, :, offset+1:offset+l1) = 1;
+voxel_space(:, :, offset+l1+1:offset+l1+l2) = 2;
+voxel_space(:, :, offset+l1+l2+1:offset+l1+l2+l3) = 3;
+voxel_space(:, :, offset+l1+l2+l3+1:offset+l1+l2+l3+l4) = 4;
+    
+% Embed tissue in background
+offset_x = offset;
+offset_y = offset;
+offset_z = offset;
+
+background = zeros(box_size);
+background(offset_x+1:offset_x+tissue_size(1), ...
+           offset_y+1:offset_y+tissue_size(2), ...
+           offset_z+1:offset_z+tissue_size(3)) = tissue;
+
+voxel_space = background;
+end
+
