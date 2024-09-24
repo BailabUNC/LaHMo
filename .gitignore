@@ -38,6 +38,7 @@ __pycache__/*
 *.pproj
 
 # large pictures
+*.ai
 *.tif
 *.raf
 *.psd
