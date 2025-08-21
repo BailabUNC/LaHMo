@@ -15,7 +15,7 @@ from matplotlib.animation import FuncAnimation
 import matplotlib.widgets as widgets
 
 class SerialPlotter:
-    def __init__(self, port, baudrate=115200, max_len=500, plot_interval=0.001, csv_filename=None, conn_timeout=5):
+    def __init__(self, port, baudrate=115200, max_len=50, plot_interval=0.001, csv_filename=None, conn_timeout=5):
         self.ser = serial.Serial(port=port, baudrate=baudrate)
         self.max_len = max_len
         self.plot_interval = plot_interval
