@@ -174,6 +174,9 @@ void setup()
     pBLEScan->setWindow(449);
     pBLEScan->setActiveScan(true);
     pBLEScan->start(5, false);
+
+	delay(5000);
+	Serial.println("Waiting...");
 }
 
 void loop()
