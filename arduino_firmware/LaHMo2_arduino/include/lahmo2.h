@@ -1,5 +1,5 @@
-#ifndef PHARYGEAL_SENSOR_FOLDABLE_H
-#define PHARYGEAL_SENSOR_FOLDABLE_H
+#ifndef LAHMO2_H
+#define LAHMO2_H
 
 #include <Arduino.h>
 #include "BLEDevice.h"
@@ -13,9 +13,9 @@
 #define NUM_CHANNEL          4
 
 #define LED0                 10
-#define LED1                 11
+#define LED1                 5
 #define LED2                 3
-#define LED3                 8
+#define LED3                 4
 
 #define SDA                  19
 #define SCL                  18
@@ -26,8 +26,8 @@
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 #define DEVICE_NAME           "LaHMo2"
-#define LHM_SERVICE_UUID      "12fb95d1-4954-450f-a82b-802f71541562"
-#define LHM_CHAR_UUID         "67136980-20d0-4711-8b37-3acd0fec8e7f"
+#define LHM_SERVICE_UUID      "0000FF01-0000-1000-8000-00805F9B34FB"
+#define LHM_CHAR_UUID         "0000ABEF-0000-1000-8000-00805F9B34FB"
 #define LHM_DESC_UUID         (BLEUUID(uint16_t(0x2901)))
 
 void IRAM_ATTR onTimer();
@@ -37,4 +37,4 @@ void sensorInit(void);
 void serviceInit(void);
 void advertisingInit(void);
 
-#endif
+#endif // LAHMO2_H

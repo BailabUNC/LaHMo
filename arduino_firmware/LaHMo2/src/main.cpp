@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "LaHMo2.h"
-#include "LSM6DSOXSensor.h"
+#include <Adafruit_LSM6DSOX.h>
 #include "MadgwickAHRS.h"
 #include "ADS1X15.h"
 #include "esp_log.h"
@@ -12,7 +12,7 @@ ADS1115 ads(MY_ADS1115_ADDRESS);
 volatile bool canOutput = false;
 
 // IMU
-LSM6DSOXSensor lsm6dsox(&Wire, LSM6DSOX_I2C_ADD_L);
+Adafruit_LSM6DSOX lsm6dsox;
 Madgwick filter;
 
 // Timer
@@ -91,44 +91,18 @@ void sensorInit()
     ads.setGain(1);
     ads.setDataRate(7);
 
-    if (lsm6dsox.begin() != LSM6DSOX_OK)
-    {
+    if (!lsm6dsox.begin_I2C()) {
         ESP_LOGE(TAG, "Cannot initialize IMU!");
-        while (1)
-            ;
+        while (1) { delay(10); }
     }
 
-    if (lsm6dsox.Enable_G() == LSM6DSOX_OK &&
-        lsm6dsox.Enable_X() == LSM6DSOX_OK)
-    {
-        ESP_LOGI(TAG, "Success enabling accelero and gyro");
-    }
-    else
-    {
-        ESP_LOGE(TAG, "Error enabling accelero and gyro");
-        while (1)
-            ;
-    }
-
-    uint8_t id;
-    lsm6dsox.ReadID(&id);
-    if (id != LSM6DSOX_ID)
-    {
-        ESP_LOGE(TAG, "Wrong id for LSM6DSOX sensor. Check that device is plugged.");
-        while (1)
-            ;
-    }
-    else
-    {
-        ESP_LOGI(TAG, "Success checking id for LSM6DSOX sensor.");
-    }
-
-    lsm6dsox.Set_X_FS(2);
-    lsm6dsox.Set_G_FS(250);
-    lsm6dsox.Set_X_ODR(SR);
-    lsm6dsox.Set_G_ODR(SR);
-    lsm6dsox.Set_FIFO_Mode(LSM6DSOX_BYPASS_MODE);
-    lsm6dsox.Set_FIFO_Mode(LSM6DSOX_STREAM_MODE);
+    // Configure ranges and data rates
+    lsm6dsox.setAccelRange(LSM6DS_ACCEL_RANGE_2_G);
+    lsm6dsox.setGyroRange(LSM6DS_GYRO_RANGE_250_DPS);
+    // Map SR (Hz) to sensor settings. Using SR defined (e.g., 6667 Hz) is above sensor capability; choose closest valid (e.g., 6.66 kHz not supported). We'll select 1.66 kHz for both.
+    lsm6dsox.setAccelDataRate(LSM6DS_RATE_1660_HZ);
+    lsm6dsox.setGyroDataRate(LSM6DS_RATE_1660_HZ);
+    ESP_LOGI(TAG, "LSM6DSOX initialized with 1660 Hz ODR.");
 
     filter.begin(1000000.0f / ALARM_US);
 
@@ -180,24 +154,23 @@ void loop()
         {
             if (canOutput)
             {
-                if (lsm6dsox.Get_X_DRDY_Status(&stateAcc) == LSM6DSOX_OK &&
-                    lsm6dsox.Get_G_DRDY_Status(&stateGyr) == LSM6DSOX_OK)
-                {
-                    lsm6dsox.Get_X_Axes(acc);
-                    lsm6dsox.Get_G_Axes(gyr);
+                sensors_event_t accel;  
+                sensors_event_t gyro;   
+                sensors_event_t temp;   
+                lsm6dsox.getEvent(&accel, &gyro, &temp);
 
-                    acc_x = acc[0] * 9.8 / 1000;
-                    acc_y = acc[1] * 9.8 / 1000;
-                    acc_z = acc[2] * 9.8 / 1000;
-                    gyr_x = gyr[0] / 1000;
-                    gyr_y = gyr[1] / 1000;
-                    gyr_z = gyr[2] / 1000;
+                acc_x = accel.acceleration.x; // m/s^2
+                acc_y = accel.acceleration.y;
+                acc_z = accel.acceleration.z;
+                // Arduino Madgwick library expects gyroscope data in degrees/second.
+                gyr_x = gyro.gyro.x * 57.295779513; // rad/s -> deg/s
+                gyr_y = gyro.gyro.y * 57.295779513;
+                gyr_z = gyro.gyro.z * 57.295779513;
 
-                    filter.updateIMU(gyr_x, gyr_y, gyr_z, acc_x, acc_y, acc_z);
-                    roll = filter.getRoll();
-                    pitch = filter.getPitch();
-                    yaw = filter.getYaw();
-                }
+                filter.updateIMU(gyr_x, gyr_y, gyr_z, acc_x, acc_y, acc_z);
+                roll = filter.getRoll();
+                pitch = filter.getPitch();
+                yaw = filter.getYaw();
 
                 uint32_t timestamp = millis();
                 float photovoltage0 = ads.toVoltage(ads.readADC(0));

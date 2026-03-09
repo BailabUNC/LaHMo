@@ -1,11 +1,25 @@
 #include <Arduino.h>
-#include "pharyngeal_sensor_foldable_i2c.h"
+#include "lahmo2.h"
 #include "LSM6DSOXSensor.h"
 #include "MadgwickAHRS.h"
 #include "ADS1X15.h"
 
 #include "esp_log.h"
+#include "esp_wifi.h"
+#include "esp_bt.h"
+
 static const char *TAG = "MY_APP";
+
+// PWM Configuration
+#define PWM_FREQ       5000   // 5 kHz PWM frequency
+#define PWM_RESOLUTION 8      // 8-bit resolution (0-255)
+#define LED_DUTY_CYCLE 13     // 5% duty cycle (13/255)
+
+// PWM Channels for each LED
+#define LED0_CHANNEL 0
+#define LED1_CHANNEL 1
+#define LED2_CHANNEL 2
+#define LED3_CHANNEL 3
 
 // ADC
 ADS1115 ads(MY_ADS1115_ADDRESS);
@@ -38,18 +52,18 @@ BLEDescriptor      lhm_desc(LHM_DESC_UUID);
 
 void led_on()
 {
-    digitalWrite(LED0, HIGH);
-    digitalWrite(LED1, HIGH);
-    digitalWrite(LED2, HIGH);
-    digitalWrite(LED3, HIGH);
+    ledcWrite(LED0_CHANNEL, LED_DUTY_CYCLE);
+    ledcWrite(LED1_CHANNEL, LED_DUTY_CYCLE);
+    ledcWrite(LED2_CHANNEL, LED_DUTY_CYCLE);
+    ledcWrite(LED3_CHANNEL, LED_DUTY_CYCLE);
 }
 
 void led_off()
 {
-    digitalWrite(LED0, LOW);
-    digitalWrite(LED1, LOW);
-    digitalWrite(LED2, LOW);
-    digitalWrite(LED3, LOW);
+    ledcWrite(LED0_CHANNEL, 0);
+    ledcWrite(LED1_CHANNEL, 0);
+    ledcWrite(LED2_CHANNEL, 0);
+    ledcWrite(LED3_CHANNEL, 0);
 }
 
 // Connection callbacks
@@ -72,10 +86,17 @@ void IRAM_ATTR onTimer()
 
 void ioInit()
 {
-    pinMode(LED0, OUTPUT);
-    pinMode(LED1, OUTPUT);
-    pinMode(LED2, OUTPUT);
-    pinMode(LED3, OUTPUT);
+    // Setup PWM channels
+    ledcSetup(LED0_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(LED1_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(LED2_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(LED3_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
+
+    // Attach PWM channels to LED pins
+    ledcAttachPin(LED0, LED0_CHANNEL);
+    ledcAttachPin(LED1, LED1_CHANNEL);
+    ledcAttachPin(LED2, LED2_CHANNEL);
+    ledcAttachPin(LED3, LED3_CHANNEL);
 
     led_on();
 }
@@ -170,17 +191,35 @@ void serviceInit()
 void advertisingInit()
 {
     static BLEAdvertising *p_advertising = BLEDevice::getAdvertising();
-    p_advertising->addServiceUUID(LHM_SERVICE_UUID);
+    
+    // set advertising data, including flags, complete list of 16-bit service UUIDs, and device name
+    BLEAdvertisementData advData;
+    advData.setFlags(ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT);
+    advData.setCompleteServices(BLEUUID(LHM_SERVICE_UUID));
+    advData.setName(DEVICE_NAME);
+    p_advertising->setAdvertisementData(advData);
+    
+    // set scan response data, including device name and other information
+    BLEAdvertisementData scanRspData;
+    scanRspData.setName(DEVICE_NAME);
+    p_advertising->setScanResponseData(scanRspData);
     
     p_advertising->setScanResponse(true);
     p_advertising->setMinPreferred(0x06);
-    p_advertising->setMinPreferred(0x12);
+    
     BLEDevice::startAdvertising();
-    ESP_LOGV(TAG, "Start advertising.");
+    ESP_LOGI(TAG, "Start advertising as: %s", DEVICE_NAME);
 }
 
 void setup()
 {
+    // Properly disable WiFi to save power (ESP-IDF style)
+    esp_wifi_stop();
+    esp_wifi_deinit();
+    
+    // Release Classic Bluetooth memory (since you only use BLE)
+    esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+    
     sensorInit();
     ioInit();
     peripheralInit();
