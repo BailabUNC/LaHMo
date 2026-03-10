@@ -13,7 +13,7 @@ static const char *TAG = "MY_APP";
 // PWM Configuration
 #define PWM_FREQ       5000   // 5 kHz PWM frequency
 #define PWM_RESOLUTION 8      // 8-bit resolution (0-255)
-#define LED_DUTY_CYCLE 13     // 5% duty cycle (13/255)
+#define LED_DUTY_CYCLE 60     // 23.5% duty cycle (60/255)
 
 // PWM Channels for each LED
 #define LED0_CHANNEL 0
@@ -43,12 +43,10 @@ int32_t gyr_x, gyr_y, gyr_z;
 float roll, pitch, yaw;
 
 // BLE connection
-bool isConnectedToClient = false;
-bool isConnectedToLastClient = false;
-
-BLEServer         *p_server         = nullptr;
-BLECharacteristic *p_lhm_char       = nullptr;
-BLEDescriptor      lhm_desc(LHM_DESC_UUID);
+bool              isConnectedToClient     = false;
+bool              isConnectedToLastClient = false;
+BLEServer        *p_server                = nullptr;
+BLECharacteristic *p_lhm_char             = nullptr;
 
 void led_on()
 {
@@ -180,10 +178,12 @@ void serviceInit()
     p_server->setCallbacks(new MyServerCallbacks());
     static BLEService *p_lhm_service = p_server->createService(LHM_SERVICE_UUID);
 
-    lhm_desc.setValue("LHM");
-
-    p_lhm_char = p_lhm_service->createCharacteristic(LHM_CHAR_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
-    p_lhm_char->addDescriptor(&lhm_desc);
+    p_lhm_char = p_lhm_service->createCharacteristic(
+        LHM_CHAR_UUID,
+        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY
+    );
+    // Client Characteristic Configuration Descriptor (0x2902) for notifications
+    p_lhm_char->addDescriptor(new BLE2902());
 
     p_lhm_service->start();
 }

@@ -5,6 +5,7 @@
 #include "BLEDevice.h"
 #include "BLEUtils.h"
 #include "BLEServer.h"
+#include "BLE2902.h"
 
 #define MY_ADS1115_ADDRESS   0x48
 
@@ -28,7 +29,6 @@
 #define DEVICE_NAME           "LaHMo2"
 #define LHM_SERVICE_UUID      "0000FF01-0000-1000-8000-00805F9B34FB"
 #define LHM_CHAR_UUID         "0000ABEF-0000-1000-8000-00805F9B34FB"
-#define LHM_DESC_UUID         (BLEUUID(uint16_t(0x2901)))
 
 void IRAM_ATTR onTimer();
 void ioInit(void);
