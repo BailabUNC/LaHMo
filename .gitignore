@@ -20,7 +20,8 @@
 **/.DS_Store
 
 # python compiles
-__pycache__/*
+__pycache__/
+*.py[cod]
 
 # videos
 *.mp4
@@ -46,5 +47,10 @@ __pycache__/*
 # pio files
 */platformio.ini
 
-# environment
-pyqt-env/*
+# environments
+pyqt-env/
+.venv/
+.vscode/
+
+# logged acquisition sessions
+data_storage/sessions/*.csv
